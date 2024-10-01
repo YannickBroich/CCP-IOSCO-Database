@@ -1,33 +1,64 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun May 26 14:27:22 2024
+Created on Sat Sep 21 11:14:18 2024
 
-@author: User
+@author: Yannick
 """
 
 import os
 import pandas as pd
 
 
-def transform_number_variables(row, description_column_exists=True):
-    transformed_row = row.copy()
-    for column in row.index:
-        if any(column.startswith(prefix) for prefix in ['4.', '6.', '7.', '16.', '17.', '18.', '20']):
-            if description_column_exists and 'Description' in row:
-                new_column_name = f"{column}_{row['Description']}"
-            else:
-                new_column_name = column
-            transformed_row[new_column_name] = row[column]
-            if description_column_exists and 'Description' in row:
-                transformed_row.drop(column, inplace=True)
-    return transformed_row
+def restore_column_format(df):
+    
+    df.columns = [col.replace('_', '.') if any(c.isdigit() for c in col) else col for col in df.columns]
+    return df
 
 
-directory = r'C:\{Your Path}\CCP IOSCO Database\Raw Data\LCH'
-output_file = r'C:\{Your Path}\CCP IOSCO Database\Database\Compiled Datasets\LCH_CompiledData.xlsx'
+def correct_misaligned_rows(df):
+    
+    if 'Currency' not in df.columns:
+        print("Currency column missing, skipping correction.")
+        return df
+
+    
+    for col in df.columns:
+        if col.startswith('5_'):
+            misaligned_rows = df['Currency'].isna() & df[col].notna()
+            if misaligned_rows.any():
+                print(f"Detected misalignment in column '{col}'. Correcting rows...")
+                
+                df.loc[misaligned_rows, 'Currency'] = df.loc[misaligned_rows, col]
+                df.loc[misaligned_rows, col] = None  
+    return df
+
+
+def transform_number_variables(df, description_column_exists=True):
+    
+    cols_to_transform = [col for col in df.columns if any(col.startswith(prefix) for prefix in ['4.', '6.', '7.', '16.', '17.', '18.', '20'])]
+
+    
+    if description_column_exists and 'Description' in df.columns:
+        
+        new_col_names = {col: f"{col}_{df['Description']}" for col in cols_to_transform}
+    else:
+        
+        new_col_names = {col: col for col in cols_to_transform}
+
+   
+    df.rename(columns=new_col_names, inplace=True)
+
+    
+    if description_column_exists and 'Description' in df.columns:
+        df.drop(cols_to_transform, axis=1, inplace=True, errors='ignore')  
+
+    return df
+
+# Directory and file paths
+directory = r'{Your Path}\CCP IOSCO Databasen\Raw Data\LCH'
+output_file = r'{Your Path}\CCP IOSCO Database\Database\Compiled Datasets\LCH_CompiledDatavf.xlsx'
 sheet_name_patterns = ["LCHLTD_DataFile_", "CCP1_DataFile_", "LCHSA_DataFile_", "CCP_DataFile_", 
                        "LCHLTD_AggregatedDataFile", "LCHSA_AggregatedDataFile", "CCP_AggregateDataFile", "AggregatedDataFile"]
-
 
 combined_data = []
 
@@ -42,8 +73,19 @@ for filename in os.listdir(directory):
             if any(pattern in sheet_name for pattern in sheet_name_patterns):
                 print(f"    Processing sheet: {sheet_name}")
                 df = pd.read_excel(file_path, sheet_name=sheet_name)
+                
+                
+                df = restore_column_format(df)
+                
+                
+                print(f"Columns in {sheet_name}: {df.columns.tolist()}")
+                
                 if not df.empty:
-                    df = df.apply(transform_number_variables, axis=1, description_column_exists='Description' in df.columns)
+                    
+                    df = correct_misaligned_rows(df)
+
+                   
+                    df = transform_number_variables(df, description_column_exists='Description' in df.columns)
                     df['CCP'] = 'LCH'
                     df['DefaultFund'] = 'LCH_DefaultFund'
                     combined_data.append(df)
@@ -53,13 +95,13 @@ for filename in os.listdir(directory):
 
 if combined_data:
     
-    combined_data = [df for df in combined_data if not df.dropna(how='all').empty]
-
-    
-    combined_df = pd.concat(combined_data)
-    combined_df = combined_df.groupby(['ReportDate', 'ReportLevelIdentifier', 'Currency'], as_index=False).first()
+    combined_df = pd.concat(combined_data, ignore_index=True)
+    combined_df.dropna(how='all', inplace=True)
 
    
+    combined_df = combined_df.groupby(['ReportDate', 'ReportLevelIdentifier', 'Currency'], as_index=False).first()
+
+    
     ordered_columns = ['ReportDate', 'CCP', 'ReportLevelIdentifier', 'DefaultFund', 'Currency']
     numeric_columns = [col for col in combined_df.columns if col not in ordered_columns]
     combined_df = combined_df[ordered_columns + numeric_columns]
