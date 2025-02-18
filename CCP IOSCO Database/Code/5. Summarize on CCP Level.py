@@ -27,4 +27,4 @@ summed_df = df.groupby(['CCP', 'ReportDate'])[numeric_columns].sum().reset_index
 output_file_path = r"C:\{Your Path}\CCP IOSCO Database\Database\CCP_IOSCO_Database_Summed.xlsx"
 summed_df.to_excel(output_file_path, index=False)
 
-print("Summierung abgeschlossen und Datei gespeichert unter:", output_file_path)
+print("Summarized and saved as:", output_file_path)
