@@ -8,7 +8,7 @@ Created on Fri Apr 18 13:08:45 2025
 import pandas as pd
 
 
-file_path = r"C:{Your Path}\CCP IOSCO Database\Database\Database\CCP_IOSCO_Database_Summed.xlsx"
+file_path = r"C:{Your Path}\CCP IOSCO Database\Database\Database\CCP_IOSCO_Database - III On CCP Level.xlsx"
 df = pd.read_excel(file_path)
 
 # Ensure it recognizes reportdate properly
@@ -29,7 +29,7 @@ df_clean = df[['Quarter'] + filtered_cols]
 df_summed = df_clean.groupby('Quarter').sum().reset_index()
 
 
-output_path = r"C:{Your Path}\CCP IOSCO Database\Database\Database\CCP_IOSCO_Database_Aggregate.xlsx"
+output_path = r"C:{Your Path}\CCP IOSCO Database\Database\Database\CCP_IOSCO_Database - IV On EU Level.xlsx"
 df_summed.to_excel(output_path, index=False)
 
 print("File saved successfully:")
