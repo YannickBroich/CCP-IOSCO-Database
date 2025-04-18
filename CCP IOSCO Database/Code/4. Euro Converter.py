@@ -73,7 +73,7 @@ def fetch_ecb_rates_with_fallback():
 conversion_rates = fetch_ecb_rates_with_fallback()
 
 
-file_path = r"C:\{Your Path}\CCP IOSCO Database\Database\CCP_IOSCO_Databasepreconversion.xlsx"
+file_path = r"C:\{Your Path}\CCP IOSCO Database\Database\CCP_IOSCO_Database - I Raw Values.xlsx"
 df = pd.read_excel(file_path)
 
 
@@ -98,5 +98,5 @@ for col in columns_to_convert:
     df[col] = df.apply(lambda row: convert_currency(row[col], get_currency_code(row)), axis=1)
 
 
-output_path = r"C:\{Your Path}\CCP IOSCO Database\Database\CCP_IOSCO_Database.xlsx"
+output_path = r"C:\{Your Path}\CCP IOSCO Database\Database\CCP_IOSCO_Database - II Converted into Euro.xlsx"
 df.to_excel(output_path, index=False)
