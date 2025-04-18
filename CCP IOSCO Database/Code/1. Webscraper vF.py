@@ -104,7 +104,7 @@ def download_files(url, download_dir, company_name):
                 print(f"File already exists: {filename}")
 
 
-specific_folder = r"C:\Users\Yannick\Desktop\CCP IOSCO Database - Arbeitsversion\Raw Data 2025"
+specific_folder = r"C:\{Your Path}\CCP IOSCO Database\Raw Data 2025"
 
 #Nasdaq,Keler and Athex can not be scraped via Beautiful Soup.
 urls_and_companies = [
