@@ -1,47 +1,36 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Oct  1 17:10:43 2024
+Created on Fri Apr 18 13:08:45 2025
 
 @author: Yannick
 """
 
 import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
 
 
-file_path = r"\CCP_IOSCO_Database_Summed.xlsx"
+file_path = r"C:{Your Path}\CCP IOSCO Database\Database\Database\CCP_IOSCO_Database_Summed.xlsx"
 df = pd.read_excel(file_path)
 
-
-if 'CCP' not in df.columns or '4.3.15_PreHaircut' not in df.columns or 'ReportDate' not in df.columns:
-    raise ValueError("The relevant rows 'CCP', '4.3.15_PreHaircut' and 'ReportDate' are missing in the file.")
-
-
+# Ensure it recognizes reportdate properly
 df['ReportDate'] = pd.to_datetime(df['ReportDate'], errors='coerce')
 
 
-if df['ReportDate'].isnull().all():
-    raise ValueError("Daterow could not be converted.")
+df['Quarter'] = df['ReportDate'].dt.to_period('Q').astype(str)
+
+#Drop rows that contain CCP specific values
+drop_keywords = ['percentage', 'percent', 'date', 'time', 'day', 'effective', 'maturity']
+numeric_cols = df.select_dtypes(include='number').columns.tolist()
+filtered_cols = [col for col in numeric_cols if not any(kw in col.lower() for kw in drop_keywords)]
 
 
-plt.figure(figsize=(12, 8))
+df_clean = df[['Quarter'] + filtered_cols]
 
 
-ccps = df['CCP'].unique()
-for ccp in ccps:
-    ccp_data = df[df['CCP'] == ccp].sort_values(by='ReportDate')
-    
-    ccp_data = ccp_data.set_index('ReportDate').reindex(pd.date_range(start=ccp_data['ReportDate'].min(), end=ccp_data['ReportDate'].max(), freq='D'))
-    
-    plt.plot(ccp_data.index, ccp_data['4.3.15_PreHaircut'], label=ccp, marker='o', linestyle='-', alpha=0.75)
+df_summed = df_clean.groupby('Quarter').sum().reset_index()
 
 
-plt.title('Linegraph CCPs')
-plt.xlabel('Datum')
-plt.ylabel('4.3.15_PreHaircut (logarithmisch)')
-plt.yscale('log')
-plt.legend(title='CCP', bbox_to_anchor=(1.05, 1), loc='upper left')
-plt.grid(True)
-plt.tight_layout()
-plt.show()
+output_path = r"C:{Your Path}\CCP IOSCO Database\Database\Database\CCP_IOSCO_Database_Aggregate.xlsx"
+df_summed.to_excel(output_path, index=False)
+
+print("File saved successfully:")
+print(output_path)
