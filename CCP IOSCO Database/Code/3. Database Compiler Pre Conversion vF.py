@@ -528,7 +528,7 @@ allowed_columns = set(column_map.keys())
 combined_df = combined_df.loc[:, combined_df.columns.isin(allowed_columns)]
 
 # Save the combined DataFrame to an Excel file
-output_path= r'C:\{Your Path}\CCP IOSCO Database\Database\CCP_IOSCO_Databasepreconversion.xlsx'
+output_path= r'C:\{Your Path}\CCP IOSCO Database\Database\CCP_IOSCO_Database - I Raw Values.xlsx'
 combined_df.to_excel(output_path, index=False)
 
 print("Data has been successfully combined and saved to", output_path)
