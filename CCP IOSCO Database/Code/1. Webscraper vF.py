@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Apr 17 11:43:12 2025
+
+@author: Yannick
+"""
+
 import requests
 import time
 from bs4 import BeautifulSoup
@@ -16,11 +23,22 @@ def clean_filename(filename):
 def download_and_extract_zip(zip_content, download_dir, filename_prefix=""):
     with zipfile.ZipFile(io.BytesIO(zip_content)) as thezip:
         for zipinfo in thezip.infolist():
-            extracted_filename = clean_filename(zipinfo.filename)
-            final_path = os.path.join(download_dir, f"{filename_prefix}{extracted_filename}")
-            thezip.extract(zipinfo, download_dir)
-            os.rename(os.path.join(download_dir, zipinfo.filename), final_path)
+            if zipinfo.is_dir():
+                continue  # Skip directories
+
+            original_filename = os.path.basename(zipinfo.filename)
+            if not original_filename.lower().endswith(".xlsx"):
+                print(f"Skipping non-Excel file in ZIP: {original_filename}")
+                continue
+
+            cleaned_filename = f"{filename_prefix}{clean_filename(original_filename)}"
+            final_path = os.path.join(download_dir, cleaned_filename)
+
+            with thezip.open(zipinfo) as source, open(final_path, "wb") as target:
+                target.write(source.read())
+
             print(f"File extracted and saved as: {final_path}")
+
 
 def download_files(url, download_dir, company_name):
     company_folder = os.path.join(download_dir, company_name)
@@ -66,8 +84,15 @@ def download_files(url, download_dir, company_name):
                 try:
                     file_response = requests.get(absolute_url, stream=True)
                     if "zip" in filename:
-                        print(f"ZIP file detected. Downloading and extracting: {filename}")
-                        download_and_extract_zip(file_response.content, company_folder)
+                        print(f"ZIP file detected. Downloading and verifying: {filename}")
+                        try:
+                            with zipfile.ZipFile(io.BytesIO(file_response.content)) as zf:
+                                bad_file = zf.testzip()
+                                if bad_file is not None:
+                                    raise zipfile.BadZipFile(f"Corrupt file in ZIP: {bad_file}")
+                            download_and_extract_zip(file_response.content, company_folder)
+                        except (zipfile.BadZipFile, zipfile.LargeZipFile, Exception) as e:
+                            print(f"Failed to handle ZIP file: {absolute_url} — Reason: {e}")
                     else:
                         with open(download_path, "wb") as file:
                             for chunk in file_response.iter_content(chunk_size=3145728):
@@ -79,7 +104,7 @@ def download_files(url, download_dir, company_name):
                 print(f"File already exists: {filename}")
 
 
-specific_folder = r"C:\{Your Path}\CCP IOSCO Database\Raw Data"
+specific_folder = r"C:\Users\Yannick\Desktop\CCP IOSCO Database - Arbeitsversion\Raw Data 2025"
 
 #Nasdaq,Keler and Athex can not be scraped via Beautiful Soup.
 urls_and_companies = [
