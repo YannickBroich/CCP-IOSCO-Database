@@ -8,7 +8,7 @@ Created on Tue Oct  1 13:43:03 2024
 import pandas as pd
 
 
-file_path = r"C:\{Your Path}\CCP IOSCO Database\Database\CCP_IOSCO_Database2.xlsx"
+file_path = r"C:\{Your Path}\CCP IOSCO Database\Database\CCP_IOSCO_Database.xlsx"
 
 
 df = pd.read_excel(file_path)
