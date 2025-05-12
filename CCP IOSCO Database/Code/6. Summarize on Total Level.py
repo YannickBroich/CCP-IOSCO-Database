@@ -11,26 +11,19 @@ import pandas as pd
 file_path = r"C:{Your Path}\CCP IOSCO Database\Database\Database\CCP_IOSCO_Database - III On CCP Level.xlsx"
 df = pd.read_excel(file_path)
 
-# Ensure it recognizes reportdate properly
-df['ReportDate'] = pd.to_datetime(df['ReportDate'], errors='coerce')
 
-
-df['Quarter'] = df['ReportDate'].dt.to_period('Q').astype(str)
-
-#Drop rows that contain CCP specific values
 drop_keywords = ['percentage', 'percent', 'date', 'time', 'day', 'effective', 'maturity']
 numeric_cols = df.select_dtypes(include='number').columns.tolist()
 filtered_cols = [col for col in numeric_cols if not any(kw in col.lower() for kw in drop_keywords)]
 
 
-df_clean = df[['Quarter'] + filtered_cols]
-
-
-df_summed = df_clean.groupby('Quarter').sum().reset_index()
+df_eu = df.groupby('Quarter')[filtered_cols].sum(min_count=1).reset_index()
 
 
 output_path = r"C:{Your Path}\CCP IOSCO Database\Database\Database\CCP_IOSCO_Database - IV On EU Level.xlsx"
-df_summed.to_excel(output_path, index=False)
+df_eu.to_excel(output_path, index=False)
+
+print(output_path)
 
 print("File saved successfully:")
 print(output_path)
